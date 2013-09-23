@@ -1,8 +1,7 @@
 (ns clj-btc.core
   (:require [clojure.data.json :as json])
   (:require [org.httpkit.client :as http])
-  (:require [clojure.java.io :as jio])
-  (:use [clojure.string :only (split)]))
+  (:require [clj-btc.config :refer (parse-config)]))
 
 (set! *warn-on-reflection* true)
 
@@ -29,10 +28,13 @@
         (-> resp :body json/read-json :error)))))
 
 (defn- do-rpc
-  [name doc args pretests]
+  [name doc args premap]
   (let [args-form ['& {:keys (vec (cons 'config args))
                        :or '{config (parse-config)}}]
-        premap {:pre (vec (concat `[(map? ~'config)] pretests))}]
+        pretests (get premap :pre [])   ;premap might be nil
+        premap (merge-with (comp vec concat)
+                           {:pre `[(map? ~'config)]}
+                           premap)]
     `(defn ~name ~doc ~args-form
        ~premap
        (let [params# (vec (take-while not-nil? ~args))]
@@ -41,93 +43,326 @@
 (defmacro ^:private defrpc
   "Create a method for rpc. Optional parameters end with a '?'.
    Defining pretests is the way to handle required parameters."
-  [name doc args & pretests]
-  (do-rpc name doc args pretests))
+  [name doc args & premap]
+  (do-rpc name doc args (first premap)))
+
+
+;;; Authogenerated rpc methods:
+(defrpc addmultisigaddress
+  "Add a nrequired-to-sign multisignature address to the wallet. Each key is
+   a bitcoin address or hex-encoded public key. If [account] is specified,
+   assign address to [account]."
+  [nrequired keys account]
+  {:pre [(number? nrequired)
+         (vector? keys)]})
+
+;;; ToDo: change add-remove-onetry to keyword-based
+(defrpc addnode
+  "version 0.8: Attempts add or remove <node> from the addnode list or try a
+   connection to <node> once."
+  [node add-remove-onetry]
+  {:pre [(string? node)
+         (string? add-remove-onetry)]})
+
+(defrpc backupwallet
+  "Safely copies wallet.dat to destination, which can be a directory or a path
+   with filename."
+  [destination]
+  (string? destination))
+
+(defrpc createmultisig
+  "Creates a multi-signature address and returns a json object"
+  [nrequired keys]
+ {:pre [(number? nrequired)
+        (vector? keys)]})
+
+(defrpc createrawtransaction
+  "version 0.7 Creates a raw transaction spending given inputs:
+   [{\"txid\": txid \"vout\": n}...] {address:amount...}."
+   [txids-map addrs-amounts-map]
+   {:pre [(map? txids-map)
+          (map? addrs-amounts-map)]})
+
+(defrpc decoderawtransaction
+  "(version 0.7) Produces a human-readable JSON object for a raw transaction."
+  [hex-string]
+  {:pre (string? hex-string)})
+
+(defrpc dumpprivkey
+  "Reveals the private key corresponding to <bitcoinaddress>"
+  [bitcoinaddress]
+  {:pre [(string?? bitcoinaddress)]})
+
+(defrpc encryptwallet
+  "Encrypts the wallet with <passphrase>."
+  [passphrase]
+  {:pre [(string? passphrase)]})
 
 (defrpc getaccount
   "Returns the account associated with the given address."
   [bitcoinaddress]
-  ;; precondition
-  (string? bitcoinaddress))
+  {:pre [(string? bitcoinaddress)]})
+
+(defrpc getaccountaddress
+  "Returns the current bitcoin address for receiving payments to this account."
+  [account]
+  {:pre [(string? account)]})
+
+(defrpc getaddednodeinfo
+  "(version 0.8) Returns information about the given added node, or all added
+   nodes.(note that onetry addnodes are not listed here) If dns is false, only
+   a list of added nodes will be provided, otherwise connected information will
+   also be available."
+  [dns node]
+  {:pre [(string? dns)]})
+
+(defrpc getaddressesbyaccount
+  "Returns the list of addresses for the given account."
+  [account]
+  {:pre [(string? account)]})
+
+(defrpc getbalance
+  "If [account] is not specified, returns the server's total available balance.
+   If [account] is specified, returns the balance in the account."
+  [account minconf])
+
+(defrpc getblock
+  "Returns information about the block with the given hash."
+  [hash]
+  {:pre [(string? hash)]})
+
+(defrpc getblockcount
+  "Returns the number of blocks in the longest block chain."
+  [])
+
+(defrpc getblockhash
+  "Returns hash of block in best-block-chain at <index>; index 0 is the genesis
+   block."
+  [index]
+  {:pre [(number? index)]})
+
+;; (defrpc getblocknumber
+;;   "Deprecated. Removed in version 0.7. Use getblockcount."
+;;   [])
+
+(defrpc getblocktemplate
+  "Returns data needed to construct a block to work on"
+  [params])
+
+(defrpc getconnectioncount
+  "Returns the number of connections to other nodes."
+  [])
+
+(defrpc getdifficulty
+  "Returns the proof-of-work difficulty as a multiple of the minimum
+   difficulty."
+  [])
+
+(defrpc getgenerate
+  "Returns true or false whether bitcoind is currently generating hashes"
+  [])
+
+(defrpc gethashespersec
+  "Returns a recent hashes per second performance measurement while generating."
+  [])
 
 (defrpc getinfo
   "Returns an object containing various state info."
   [])
 
-(defrpc importprivkey
-  "Adds a private key (as returned by dumpprivkey) to your wallet.
-   This may take a while, as a rescan is done, looking for existing
-   transactions. Optional [rescan] parameter added in 0.8.0."
-  [bitcoinprivkey label? rescan?]
-  (string? bitcoinprivkey))
+(defrpc getmemorypool
+  "Replaced in v0.7.0 with getblocktemplate, submitblock, getrawmempool```"
+  [data])
 
+(defrpc getmininginfo
+  "Returns an object containing mining-related information: blocks,
+   currentblocksize, currentblocktx, difficulty, errors, generate, genproclimit,
+   hashespersec, pooledtx, testnet"
+  [])
 
-;;; config file related functions
+(defrpc getnewaddress
+  "Returns a new bitcoin address for receiving payments. If [account] is
+   specified (recommended), it is added to the address book so payments received
+   with the address will be credited to [account]."
+  [account])
 
-(defn- default-config-file
-  "Return the full path (as a vector of strings) to the default bitcoin.conf
-   file, by OS (default Linux). This is in accordance with
-   https://en.bitcoin.it/wiki/Running_Bitcoin#Bitcoin.conf_Configuration_File"
+(defrpc getpeerinfo
+  "(version 0.7) Returns data about each connected node."
+  [])
+
+(defrpc getrawmempool
+  "(version 0.7) Returns all transaction ids in memory pool"
+  [])
+
+(defrpc getrawtransaction
+  "(version 0.7) Returns raw transaction representation for given transaction id."
+  [txid verbose]
+  {:pre [(string? txid)]})
+
+(defrpc getreceivedbyaccount
+  "Returns the total amount received by addresses with [account] in transactions
+   with at least [minconf] confirmations. If [account] not provided return will
+   include all transactions to all accounts. (version 0.3.24)"
+  [account minconf])
+
+(defrpc getreceivedbyaddress
+  "Returns the total amount received by <bitcoinaddress> in transactions with at
+   least [minconf] confirmations. While some might consider this obvious, value
+   reported by this only considers *receiving* transactions. It does not check
+   payments that have been made *from* this address. In other words, this is not
+   \"getaddressbalance\". Works only for addresses in the local wallet, external
+   addresses will always show 0."
+  [bitcoinaddress minconf]
+  {:pre [(string? bitcoinaddress)]})
+
+(defrpc gettransaction
+  "Returns an object about the given transaction containing:
+   \"amount\": total amount of the transaction,
+   \"confirmations\": number of confirmations of the transaction,
+   \"txid\": the transaction ID,
+   \"time\": time associated with the transaction.,
+   \"details\" - An array of objects containing: \"account\", \"address\",
+        \"category\", \"amount\", \"fee\""
+  [txid]
+  {:pre [(string? txid)]})
+
+(defrpc gettxout
+  "Returns details about an unspent transaction output (UTXO)"
+  [txid n includemempool]
+  (??? txid)
+  (??? n))
+(defrpc gettxoutsetinfo
+  "Returns statistics about the unspent transaction output (UTXO) set"
   []
-  (let [nix-data-dir #(System/getProperty "user.home")
-        win-data-dir #(System/getenv "AppData")
-        os-name (System/getProperty "os.name")
-        path (case (first (split os-name #"\s"))
-               "Mac" [(nix-data-dir) "Library" "Application Support"
-                      "Bitcoin" "bitcoin.conf"]
-               "Windows" [(win-data-dir) "Bitcoin" "bitcoin.conf"]
-               ;; "Linux" is the default
-               [(nix-data-dir) ".bitcoin" "bitcoin.conf"])]
-    (str (apply jio/file path))))
-
-(defn- parse-config
-  "Return a Map of properties from the given file, or from the default
-   configuration file"
-  ([] (parse-config (default-config-file)))
-  ;; Straight from http://stackoverflow.com/questions/7777882/loading-configuration-file-in-clojure-as-data-structure
-  ([file-name]
-     (let [config
-           (with-open [^java.io.Reader reader (jio/reader file-name)]
-             (let [props (java.util.Properties.)]
-               (.load props reader)
-               (into {} (for [[k v] props] [(keyword k) (read-string v)]))))
-           ;; default values
-           testnet (and (number? (config :testnet)) (> (config :testnet) 0))
-           rpcport (get config :rpcport (if testnet 18332 8332))
-           rpchost (get config :rpchost "http://127.0.0.1")]
-       (assoc config :testnet testnet :rpcport rpcport :rpchost rpchost))))
-
-;; (defn getaccount
-;;   "Returns the account associated with the given address."
-;;   ([bitcoinaddress] (getaccount bitcoinaddress (parse-config)))
-;;   ([bitcoinaddress config]
-;;      (let [resp @(http/post
-;;                   (str "http://127.0.0.1" (config :rpcport))
-;;                   {:basic-auth [(config :rpcuser) (config :rpcpassword)],
-;;                    :headers {"Content-Type" "application/json; charset=utf-8"},
-;;                    :body (json/write-str {"version" "2.0", "params" [bitcoinaddress],
-;;                                           "method" "getaccount",
-;;                                           "id" (.incrementAndGet id-num)})})]
-;;        (if (= 200 (:status resp))
-;;          (-> resp :body json/read-json :result)
-;;          (-> resp :body json/read-json :error)))))
-
-;; ;; (defn importprivkey
-;; ;;   "Adds a private key (as returned by dumpprivkey) to your wallet.
-;; ;;    This may take a while, as a rescan is done, looking for existing transactions.
-;; ;;    Optional [rescan] parameter added in 0.8.0."
-;; ;;   [config & {:keys [bitcoinprivkey label rescan]}]
-;; ;;   {:pre [(map? config)]}
-;; ;;   (let [params (vec (take-while not-nil? [bitcoinprivkey label rescan]))]
-;; ;;     (rpc-call config "importprivkey" params)))
-
-;; (defn importprivkey
-;;   "Adds a private key (as returned by dumpprivkey) to your wallet.
-;;    This may take a while, as a rescan is done, looking for existing transactions.
-;;    Optional [rescan] parameter added in 0.8.0."
-;;   [& {:keys [config bitcoinprivkey label rescan]
-;;       :or {config (parse-config)}}]
-;;   {:pre [(map? config)
-;;          (string? bitcoinprivkey)]}
-;;   (let [params (vec (take-while not-nil? [bitcoinprivkey label rescan]))]
-;;     (rpc-call config "importprivkey" params)))
+  )
+(defrpc getwork
+  "\"If [data] is not specified, returns formatted hash data to work on:, \"midstate\": precomputed hash state after hashing the first half of the data, \"data\": block data, \"hash1\": formatted hash buffer for second hash, \"target\": little endian hash target, If [data] is specified, tries to solve the block and returns true if it was successful.\""
+  [data]
+  )
+(defrpc help
+  "List commands, or get help for a command."
+  [command]
+  )
+(defrpc importprivkey
+  "Adds a private key (as returned by dumpprivkey) to your wallet. This may take a while, as a rescan is done, looking for existing transactions. Optional [rescan] parameter added in 0.8.0."
+  [bitcoinprivkey label rescan]
+  (??? bitcoinprivkey))
+(defrpc keypoolrefill
+  "Fills the keypool, requires wallet passphrase to be set."
+  []
+  )
+(defrpc listaccounts
+  "Returns Object that has account names as keys, account balances as values."
+  [minconf]
+  )
+(defrpc listaddressgroupings
+  "version 0.7 Returns all addresses in the wallet and info used for coincontrol."
+  []
+  )
+(defrpc listreceivedbyaccount
+  "\"Returns an array of objects containing:, \"account\": the account of the receiving addresses, \"amount\": total amount received by addresses with this account, \"confirmations\": number of confirmations of the most recent transaction included\""
+  [minconf includeempty]
+  )
+(defrpc listreceivedbyaddress
+  "\"Returns an array of objects containing:, \"address\" : receiving address, \"account\": the account of the receiving address, \"amount\": total amount received by the address, \"confirmations\": number of confirmations of the most recent transaction included, To get a list of accounts on the system, execute bitcoind listreceivedbyaddress 0 true\""
+  [minconf includeempty]
+  )
+(defrpc listsinceblock
+  "Get all transactions in blocks since block [blockhash], or all transactions if omitted."
+  [blockhash target-confirmations]
+  )
+(defrpc listtransactions
+  "Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. If [account] not provided will return recent transaction from all accounts."
+  [account count from]
+  )
+(defrpc listunspent
+  "version 0.7 Returns array of unspent transaction inputs in the wallet."
+  [minconf maxconf]
+  )
+(defrpc listlockunspent
+  "version 0.8 Returns list of temporarily unspendable outputs"
+  []
+  )
+(defrpc lockunspent
+  "version 0.8 Updates list of temporarily unspendable outputs"
+  [unlock? array-of-objects]
+  (??? unlock?))
+(defrpc move
+  "Move from one account in your wallet to another"
+  [fromaccount toaccount amount minconf comment]
+  (??? fromaccount)
+  (??? toaccount)
+  (??? amount))
+(defrpc sendfrom
+  "<amount> is a real and is rounded to 8 decimal places. Will send the given amount to the given address, ensuring the account has a valid balance using [minconf] confirmations. Returns the transaction ID if successful (not in JSON object)."
+  [fromaccount tobitcoinaddress amount minconf comment comment-to]
+  (??? fromaccount)
+  (??? tobitcoinaddress)
+  (??? amount))
+(defrpc sendmany
+  "amounts are double-precision floating point numbers"
+  [fromaccount {address:amount...} minconf comment]
+  (??? fromaccount))
+(defrpc sendrawtransaction
+  "version 0.7 Submits raw transaction (serialized, hex-encoded) to local node and network."
+  [hexstring]
+  (??? hexstring))
+(defrpc sendtoaddress
+  "<amount> is a real and is rounded to 8 decimal places. Returns the transaction ID <txid> if successful."
+  [bitcoinaddress amount comment comment-to]
+  (??? bitcoinaddress)
+  (??? amount))
+(defrpc setaccount
+  "Sets the account associated with the given address. Assigning address that is already assigned to the same account will create a new address associated with that account."
+  [bitcoinaddress account]
+  (??? bitcoinaddress)
+  (??? account))
+(defrpc setgenerate
+  "\"<generate> is true or false to turn generation on or off. Generation is limited to [genproclimit] processors, -1 is unlimited.\""
+  [generate genproclimit]
+  (??? generate))
+(defrpc settxfee
+  "<amount> is a real and is rounded to the nearest 0.00000001"
+  [amount]
+  (??? amount))
+(defrpc signmessage
+  "Sign a message with the private key of an address."
+  [bitcoinaddress message]
+  (??? bitcoinaddress)
+  (??? message))
+(defrpc signrawtransaction
+  "version 0.7 Adds signatures to a raw transaction and returns the resulting raw transaction."
+  [hexstring {"txid":txid"vout":n"scriptPubKey":hex}... privatekey1...]
+  (??? hexstring))
+(defrpc stop
+  "Stop bitcoin server."
+  []
+  )
+(defrpc submitblock
+  "Attempts to submit new block to network."
+  [hex data optional-params-obj]
+  )
+(defrpc validateaddress
+  "Return information about <bitcoinaddress>."
+  [bitcoinaddress]
+  (??? bitcoinaddress))
+(defrpc verifymessage
+  "Verify a signed message."
+  [bitcoinaddress signature message]
+  (??? bitcoinaddress)
+  (??? signature)
+  (??? message))
+(defrpc walletlock
+  "Removes the wallet encryption key from memory, locking the wallet. After calling this method, you will need to call walletpassphrase again before being able to call any methods which require the wallet to be unlocked."
+  []
+  )
+(defrpc walletpassphrase
+  "Stores the wallet decryption key in memory for <timeout> seconds."
+  [passphrase timeout]
+  (??? passphrase)
+  (??? timeout))
+(defrpc walletpassphrasechange
+  "Changes the wallet passphrase from <oldpassphrase> to <newpassphrase>."
+  [oldpassphrase newpassphrase]
+  (??? oldpassphrase)
+  (??? newpassphrase))
