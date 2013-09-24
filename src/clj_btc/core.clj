@@ -1,11 +1,13 @@
 (ns clj-btc.core
   (:require [clojure.data.json :as json])
   (:require [org.httpkit.client :as http])
+  (:require [clojure.java.io :refer (reader)])
   (:require [clj-btc.config :refer (parse-config)]))
 
 (set! *warn-on-reflection* true)
 
-(def id-num (java.util.concurrent.atomic.AtomicInteger.))
+(def ^java.util.concurrent.atomic.AtomicInteger id-num
+  (java.util.concurrent.atomic.AtomicInteger.))
 (def not-nil? (comp not nil?))
 
 (defn- rpc-call
@@ -23,15 +25,14 @@
                                   "id" (.incrementAndGet id-num)})})]
     (if-let [err (:error resp)]
       (throw err)
-      (if (= 200 (:status resp))
-        (-> resp :body json/read-json :result)
-        (-> resp :body json/read-json :error)))))
+      (if (= 200 (:status resp))        ;FIXME: use json/read :bigdec
+        (-> resp :body json/read-str (get "result"))
+        (-> resp :body json/read-str (get "error"))))))
 
 (defn- do-rpc
   [name doc args premap]
   (let [args-form ['& {:keys (vec (cons 'config args))
                        :or '{config (parse-config)}}]
-        pretests (get premap :pre [])   ;premap might be nil
         premap (merge-with (comp vec concat)
                            {:pre `[(map? ~'config)]}
                            premap)]
@@ -53,12 +54,12 @@
    a bitcoin address or hex-encoded public key. If [account] is specified,
    assign address to [account]."
   [nrequired keys account]
-  {:pre [(number? nrequired)
+  {:pre [(integer? nrequired)
          (vector? keys)]})
 
 ;;; ToDo: change add-remove-onetry to keyword-based
 (defrpc addnode
-  "version 0.8: Attempts add or remove <node> from the addnode list or try a
+  "(version 0.8) Attempts add or remove <node> from the addnode list or try a
    connection to <node> once."
   [node add-remove-onetry]
   {:pre [(string? node)
@@ -73,7 +74,7 @@
 (defrpc createmultisig
   "Creates a multi-signature address and returns a json object"
   [nrequired keys]
- {:pre [(number? nrequired)
+ {:pre [(integer? nrequired)
         (vector? keys)]})
 
 (defrpc createrawtransaction
@@ -139,7 +140,7 @@
   "Returns hash of block in best-block-chain at <index>; index 0 is the genesis
    block."
   [index]
-  {:pre [(number? index)]})
+  {:pre [(integer? index)]})
 
 ;; (defrpc getblocknumber
 ;;   "Deprecated. Removed in version 0.7. Use getblockcount."
@@ -229,32 +230,42 @@
 (defrpc gettxout
   "Returns details about an unspent transaction output (UTXO)"
   [txid n includemempool]
-  (??? txid)
-  (??? n))
+  {:pre [(string? txid)
+         (integer? n)]})
+
 (defrpc gettxoutsetinfo
   "Returns statistics about the unspent transaction output (UTXO) set"
-  []
-  )
+  [])
+
 (defrpc getwork
-  "\"If [data] is not specified, returns formatted hash data to work on:, \"midstate\": precomputed hash state after hashing the first half of the data, \"data\": block data, \"hash1\": formatted hash buffer for second hash, \"target\": little endian hash target, If [data] is specified, tries to solve the block and returns true if it was successful.\""
-  [data]
-  )
+  "If [data] is not specified, returns formatted hash data to work on:
+  \"midstate\": precomputed hash state after hashing the first half of
+  the data, \"data\": block data, \"hash1\": formatted hash buffer for
+  second hash, \"target\": little endian hash target, If [data] is
+  specified, tries to solve the block and returns true if it was
+  successful."
+  [data])
+
 (defrpc help
   "List commands, or get help for a command."
-  [command]
-  )
+  [command])
+
 (defrpc importprivkey
-  "Adds a private key (as returned by dumpprivkey) to your wallet. This may take a while, as a rescan is done, looking for existing transactions. Optional [rescan] parameter added in 0.8.0."
+  "Adds a private key (as returned by dumpprivkey) to your wallet. This
+   may take a while, as a rescan is done, looking for existing
+  transactions. Optional [rescan] parameter added in 0.8.0."
   [bitcoinprivkey label rescan]
-  (??? bitcoinprivkey))
+  {:pre [(string? bitcoinprivkey)]})
+
 (defrpc keypoolrefill
   "Fills the keypool, requires wallet passphrase to be set."
-  []
-  )
+  [])
+
 (defrpc listaccounts
-  "Returns Object that has account names as keys, account balances as values."
-  [minconf]
-  )
+  "Returns Object that has account names as keys, account balances as
+   values."
+  [minconf])
+
 (defrpc listaddressgroupings
   "version 0.7 Returns all addresses in the wallet and info used for coincontrol."
   []
