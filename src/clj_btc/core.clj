@@ -1,8 +1,9 @@
 (ns clj-btc.core
   (:require [clojure.data.json :as json])
   (:require [org.httpkit.client :as http])
-  (:require [clojure.java.io :refer (reader)])
-  (:require [clj-btc.config :refer (parse-config)]))
+  (:require [clojure.java.io :as jio :refer (reader)])
+  (:require [clj-btc.config :refer (read-local-config)])
+  (:import java.io.StringReader))
 
 (set! *warn-on-reflection* true)
 
@@ -25,14 +26,14 @@
                                   "id" (.incrementAndGet id-num)})})]
     (if-let [err (:error resp)]
       (throw err)
-      (if (= 200 (:status resp))        ;FIXME: use json/read :bigdec
-        (-> resp :body json/read-str (get "result"))
+      (if (= 200 (:status resp))
+        (-> resp :body StringReader. (json/read :bigdec true) (get "result"))
         (-> resp :body json/read-str (get "error"))))))
 
 (defn- do-rpc
   [name doc args premap]
   (let [args-form ['& {:keys (vec (cons 'config args))
-                       :or '{config (parse-config)}}]
+                       :or '{config (read-local-config)}}]
         premap (merge-with (comp vec concat)
                            {:pre `[(map? ~'config)]}
                            premap)]
@@ -47,8 +48,7 @@
   [name doc args & premap]
   (do-rpc name doc args (first premap)))
 
-
-;;; Authogenerated rpc methods:
+;;; Remote Procedure Calls
 (defrpc addmultisigaddress
   "Add a nrequired-to-sign multisignature address to the wallet. Each key is
    a bitcoin address or hex-encoded public key. If [account] is specified,
@@ -69,30 +69,30 @@
   "Safely copies wallet.dat to destination, which can be a directory or a path
    with filename."
   [destination]
-  (string? destination))
+  {:pre [(string? destination)]})
 
 (defrpc createmultisig
   "Creates a multi-signature address and returns a json object"
   [nrequired keys]
- {:pre [(integer? nrequired)
-        (vector? keys)]})
+  {:pre [(integer? nrequired)
+         (vector? keys)]})
 
 (defrpc createrawtransaction
-  "version 0.7 Creates a raw transaction spending given inputs:
+  "(version 0.7) Creates a raw transaction spending given inputs:
    [{\"txid\": txid \"vout\": n}...] {address:amount...}."
-   [txids-map addrs-amounts-map]
-   {:pre [(map? txids-map)
-          (map? addrs-amounts-map)]})
+  [txids-map addrs-amounts-map]
+  {:pre [(map? txids-map)
+         (map? addrs-amounts-map)]})
 
 (defrpc decoderawtransaction
-  "(version 0.7) Produces a human-readable JSON object for a raw transaction."
+  "(version 0.7) Produces a human-readable JSON object for a raw transaction."
   [hex-string]
   {:pre (string? hex-string)})
 
 (defrpc dumpprivkey
   "Reveals the private key corresponding to <bitcoinaddress>"
   [bitcoinaddress]
-  {:pre [(string?? bitcoinaddress)]})
+  {:pre [(string? bitcoinaddress)]})
 
 (defrpc encryptwallet
   "Encrypts the wallet with <passphrase>."
@@ -196,7 +196,8 @@
   [])
 
 (defrpc getrawtransaction
-  "(version 0.7) Returns raw transaction representation for given transaction id."
+  "(version 0.7) Returns raw transaction representation for given
+  transaction id."
   [txid verbose]
   {:pre [(string? txid)]})
 
@@ -267,113 +268,160 @@
   [minconf])
 
 (defrpc listaddressgroupings
-  "version 0.7 Returns all addresses in the wallet and info used for coincontrol."
-  []
-  )
+  "(version 0.7) Returns all addresses in the wallet and info used for
+   coincontrol."
+  [])
+
 (defrpc listreceivedbyaccount
-  "\"Returns an array of objects containing:, \"account\": the account of the receiving addresses, \"amount\": total amount received by addresses with this account, \"confirmations\": number of confirmations of the most recent transaction included\""
-  [minconf includeempty]
-  )
+  "Returns an array of objects containing:, \"account\": the account
+   of the receiving addresses, \"amount\": total amount received by
+   addresses with this account, \"confirmations\": number of
+   confirmations of the most recent transaction included"
+  [minconf includeempty])
+
 (defrpc listreceivedbyaddress
-  "\"Returns an array of objects containing:, \"address\" : receiving address, \"account\": the account of the receiving address, \"amount\": total amount received by the address, \"confirmations\": number of confirmations of the most recent transaction included, To get a list of accounts on the system, execute bitcoind listreceivedbyaddress 0 true\""
+  "Returns an array of objects containing:, \"address\": receiving
+  address, \"account\": the account of the receiving address,
+  \"amount\": total amount received by the address, \"confirmations\":
+  number of confirmations of the most recent transaction included, To
+  get a list of accounts on the system, execute bitcoind
+  listreceivedbyaddress 0 true"
   [minconf includeempty]
   )
 (defrpc listsinceblock
-  "Get all transactions in blocks since block [blockhash], or all transactions if omitted."
-  [blockhash target-confirmations]
-  )
+  "Get all transactions in blocks since block [blockhash], or all
+   transactions if omitted."
+  [blockhash target-confirmations])
+
 (defrpc listtransactions
-  "Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. If [account] not provided will return recent transaction from all accounts."
-  [account count from]
-  )
+  "Returns up to [count] most recent transactions skipping the first
+  [from] transactions for account [account]. If [account] not provided
+  will return recent transaction from all accounts."
+  [account count from])
+
 (defrpc listunspent
-  "version 0.7 Returns array of unspent transaction inputs in the wallet."
-  [minconf maxconf]
-  )
+  "(version 0.7) Returns array of unspent transaction inputs in the wallet."
+  [minconf maxconf])
 (defrpc listlockunspent
-  "version 0.8 Returns list of temporarily unspendable outputs"
-  []
-  )
+  "(version 0.8) Returns list of temporarily unspendable outputs"
+  [])
+
 (defrpc lockunspent
-  "version 0.8 Updates list of temporarily unspendable outputs"
+  "(version 0.8) Updates list of temporarily unspendable outputs"
   [unlock? array-of-objects]
-  (??? unlock?))
+  {:pre [(not-nil? unlock?)]})
+
 (defrpc move
   "Move from one account in your wallet to another"
   [fromaccount toaccount amount minconf comment]
-  (??? fromaccount)
-  (??? toaccount)
-  (??? amount))
+  {:pre [(string? fromaccount)
+         (string? toaccount)
+         (number? amount)]})
+
 (defrpc sendfrom
-  "<amount> is a real and is rounded to 8 decimal places. Will send the given amount to the given address, ensuring the account has a valid balance using [minconf] confirmations. Returns the transaction ID if successful (not in JSON object)."
+  "<amount> is a real and is rounded to 8 decimal places. Will send
+  the given amount to the given address, ensuring the account has a
+  valid balance using [minconf] confirmations. Returns the transaction
+  ID if successful (not in JSON object)."
   [fromaccount tobitcoinaddress amount minconf comment comment-to]
-  (??? fromaccount)
-  (??? tobitcoinaddress)
-  (??? amount))
+  {:pre [(string? fromaccount)
+         (string? tobitcoinaddress)
+         (number? amount)]})
+
 (defrpc sendmany
-  "amounts are double-precision floating point numbers"
-  [fromaccount {address:amount...} minconf comment]
-  (??? fromaccount))
+  "amounts are double-precision floating point numbers.
+  example usage:
+  (sendmany :fromaccount \"my-account\"
+            :address-amount-maps [{\"payee1\" \"amount1\"}]
+            :minconf 6 :comment \"Keep the change\")"
+  [fromaccount address-amount-maps minconf comment]
+  {:pre [(string? fromaccount)
+         (vector? address-amount-maps)]})
+
 (defrpc sendrawtransaction
-  "version 0.7 Submits raw transaction (serialized, hex-encoded) to local node and network."
+  "(version 0.7) Submits raw transaction (serialized, hex-encoded) to
+  local node and network."
   [hexstring]
-  (??? hexstring))
+  {:pre [(string? hexstring)]})
+
 (defrpc sendtoaddress
-  "<amount> is a real and is rounded to 8 decimal places. Returns the transaction ID <txid> if successful."
+  "<amount> is a real and is rounded to 8 decimal places. Returns the
+  transaction ID <txid> if successful."
   [bitcoinaddress amount comment comment-to]
-  (??? bitcoinaddress)
-  (??? amount))
+  {:pre [(string? bitcoinaddress)
+         (number? amount)]})
+
 (defrpc setaccount
-  "Sets the account associated with the given address. Assigning address that is already assigned to the same account will create a new address associated with that account."
+  "Sets the account associated with the given address. Assigning
+  address that is already assigned to the same account will create a new
+  address associated with that account."
   [bitcoinaddress account]
-  (??? bitcoinaddress)
-  (??? account))
+  {:pre [(string? bitcoinaddress)
+         (string? account)]})
 (defrpc setgenerate
-  "\"<generate> is true or false to turn generation on or off. Generation is limited to [genproclimit] processors, -1 is unlimited.\""
+  "<generate> is true or false to turn generation on or
+  off. Generation is limited to [genproclimit] processors, -1 is
+  unlimited.\""
   [generate genproclimit]
-  (??? generate))
+  {:pre [(not-nil? generate)]})
+
 (defrpc settxfee
   "<amount> is a real and is rounded to the nearest 0.00000001"
   [amount]
-  (??? amount))
+  {:pre [(number? amount)]})
+
 (defrpc signmessage
   "Sign a message with the private key of an address."
   [bitcoinaddress message]
-  (??? bitcoinaddress)
-  (??? message))
+  {:pre [(string? bitcoinaddress)
+         (string? message)]})
+
+
 (defrpc signrawtransaction
-  "version 0.7 Adds signatures to a raw transaction and returns the resulting raw transaction."
-  [hexstring {"txid":txid"vout":n"scriptPubKey":hex}... privatekey1...]
-  (??? hexstring))
+  "(version 0.7) Adds signatures to a raw transaction and returns the
+  resulting raw transaction.
+  txinfo is of the form [{:txid \"txid\", :vout n,
+                          :scriptPubKey \"hex\"}].
+  Exact case is important, pay attention to scriptPubKey."
+  [hexstring txinfo privatekeys]
+  {:pre [(string? hexstring)
+         (vector? txinfo)]})
+
 (defrpc stop
   "Stop bitcoin server."
-  []
-  )
+  [])
+
 (defrpc submitblock
   "Attempts to submit new block to network."
-  [hex data optional-params-obj]
-  )
+  [hex data optional-params-obj])
+
 (defrpc validateaddress
   "Return information about <bitcoinaddress>."
   [bitcoinaddress]
-  (??? bitcoinaddress))
+  {:pre [(string? bitcoinaddress)]})
+
 (defrpc verifymessage
   "Verify a signed message."
   [bitcoinaddress signature message]
-  (??? bitcoinaddress)
-  (??? signature)
-  (??? message))
+  {:pre [(string? bitcoinaddress)
+         (string? signature)
+         (string? message)]})
+
 (defrpc walletlock
-  "Removes the wallet encryption key from memory, locking the wallet. After calling this method, you will need to call walletpassphrase again before being able to call any methods which require the wallet to be unlocked."
-  []
-  )
+  "Removes the wallet encryption key from memory, locking the
+  wallet. After calling this method, you will need to call
+  walletpassphrase again before being able to call any methods which
+  require the wallet to be unlocked."
+  [])
+
 (defrpc walletpassphrase
   "Stores the wallet decryption key in memory for <timeout> seconds."
   [passphrase timeout]
-  (??? passphrase)
-  (??? timeout))
+  {:pre [(string? passphrase)
+         (number? timeout)]})
+
 (defrpc walletpassphrasechange
   "Changes the wallet passphrase from <oldpassphrase> to <newpassphrase>."
   [oldpassphrase newpassphrase]
-  (??? oldpassphrase)
-  (??? newpassphrase))
+  {:pre [(string? oldpassphrase)
+         (string? newpassphrase)]})

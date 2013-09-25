@@ -2,6 +2,8 @@
   (:require [clojure.java.io :as jio])
   (:require [clojure.string :refer (split)]))
 
+(set! *warn-on-reflection* true)
+
 ;;; config file related functions
 (defn- default-config-file
   "Return the full path (as a vector of strings) to the default bitcoin.conf
@@ -19,19 +21,23 @@
                [(nix-data-dir) ".bitcoin" "bitcoin.conf"])]
     (str (apply jio/file path))))
 
-(defn parse-config
+  ;; Straight from http://stackoverflow.com/questions/7777882/loading-configuration-file-in-clojure-as-data-structure
+(defn- parse-config [file-name]
+  (let [config
+        (with-open [reader (jio/reader file-name)]
+          (let [props (java.util.Properties.)]
+            (.load props reader)
+            (into {} (for [[k v] props] [(keyword k) (read-string v)]))))
+        testnet (and (integer? (:testnet config))
+                     (> (:testnet config) 0))]
+    ;; add default values
+    (merge {:testnet testnet,
+            :rpcport (if testnet 18332 8332),
+            :rpchost "http://127.0.0.1"}
+           config)))
+
+(defn read-local-config
   "Return a Map of properties from the given file, or from the default
    configuration file"
-  ([] (parse-config (default-config-file)))
-  ;; Straight from http://stackoverflow.com/questions/7777882/loading-configuration-file-in-clojure-as-data-structure
-  ([file-name]
-     (let [config
-           (with-open [^java.io.Reader reader (jio/reader file-name)]
-             (let [props (java.util.Properties.)]
-               (.load props reader)
-               (into {} (for [[k v] props] [(keyword k) (read-string v)]))))
-           ;; add default values
-           testnet (and (number? (config :testnet)) (> (config :testnet) 0))
-           rpcport (get config :rpcport (if testnet 18332 8332))
-           rpchost (get config :rpchost "http://127.0.0.1")]
-       (assoc config :testnet testnet :rpcport rpcport :rpchost rpchost))))
+  ([] (read-local-config (default-config-file)))
+  ([file-name] (parse-config file-name)))
