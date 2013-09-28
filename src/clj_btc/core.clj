@@ -358,12 +358,13 @@
   [bitcoinaddress account]
   {:pre [(string? bitcoinaddress)
          (string? account)]})
+
 (defrpc setgenerate
   "<generate> is true or false to turn generation on or
   off. Generation is limited to [genproclimit] processors, -1 is
-  unlimited.\""
+  unlimited."
   [generate genproclimit]
-  {:pre [(not-nil? generate)]})
+  {:pre [(instance? Boolean generate)]})
 
 (defrpc settxfee
   "<amount> is a real and is rounded to the nearest 0.00000001"
