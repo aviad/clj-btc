@@ -1,13 +1,22 @@
-;;; Since clj-btc is a wrapper around the C++ Bitcoin client, all the
-;;; tests are integration tests - making sure the different functions
-;;; are able to return the correct values, assuming that a
-;;; "Bitcoin-Qt -server"/"bitcoind" is running and accessible according to the
-;;; local configuration file.
+;;;; Copyright 2013 Aviad Reich.
+;;;; The use and distribution terms for this software are covered by
+;;;; the Apache License, Version 2.0
+;;;; (http://www.apache.org/licenses/LICENSE-2.0.txt), which can be
+;;;; found in the file LICENSE at the root of this distribution. By
+;;;; using this software in any fashion, you are agreeing to be bound
+;;;; by the terms of this license. You must not remove this notice, or
+;;;; any other, from this software.
 
 (ns clj-btc.core-test
   (:require [clojure.test :refer :all]
             [clj-btc.core :refer :all]
             [clj-btc.config :refer :all]))
+
+;;; Since clj-btc is a wrapper around the C++ Bitcoin client, all the
+;;; tests are integration tests - making sure the different functions
+;;; are able to return the correct values, assuming that a
+;;; "Bitcoin-Qt -server"/"bitcoind" is running and accessible according to the
+;;; local configuration file.
 
 (def cfg (atom {}))
 ;; (def addr-with-bitcoins

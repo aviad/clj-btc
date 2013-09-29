@@ -1,3 +1,12 @@
+;;;; Copyright 2013 Aviad Reich.
+;;;; The use and distribution terms for this software are covered by
+;;;; the Apache License, Version 2.0
+;;;; (http://www.apache.org/licenses/LICENSE-2.0.txt), which can be
+;;;; found in the file LICENSE at the root of this distribution. By
+;;;; using this software in any fashion, you are agreeing to be bound
+;;;; by the terms of this license. You must not remove this notice, or
+;;;; any other, from this software.
+
 (ns clj-btc.config
   (:require [clojure.java.io :as jio])
   (:require [clojure.string :refer (split)]))
