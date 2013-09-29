@@ -1,18 +1,18 @@
-(ns clj-btc.core-test
-  (:require [clojure.test :refer :all]
-            [clj-btc.core :refer :all]
-            [clj-btc.config :refer :all]))
-
 ;;; Since clj-btc is a wrapper around the C++ Bitcoin client, all the
 ;;; tests are integration tests - making sure the different functions
 ;;; are able to return the correct values, assuming that a
 ;;; "Bitcoin-Qt -server"/"bitcoind" is running and accessible according to the
 ;;; local configuration file.
 
+(ns clj-btc.core-test
+  (:require [clojure.test :refer :all]
+            [clj-btc.core :refer :all]
+            [clj-btc.config :refer :all]))
+
 (def cfg (atom {}))
-(def addr-with-bitcoins
-  {:public "mqWiQRdS6MePCtALRg2smULFvqf8Ru1usj",
-   :private "cVGghpMADPnrX6YNnS7X8nSEnULR6epfJFHLyw9dvKi6n17tUkDg"})
+;; (def addr-with-bitcoins
+;;   {:public "mqWiQRdS6MePCtALRg2smULFvqf8Ru1usj",
+;;    :private "cVGghpMADPnrX6YNnS7X8nSEnULR6epfJFHLyw9dvKi6n17tUkDg"})
 
 (defn config-fixture
   [f]
@@ -82,22 +82,24 @@
                                   :bitcoinaddress "invalid-address")
          "isvalid")))))
 
-(deftest send-payment
-  (let [imported-account
-        (str "IMPORTED-" (subs (str (java.util.UUID/randomUUID)) 0 8))
+;; (deftest send-payment
+;;   (let [imported-account
+;;         (str "IMPORTED-" (subs (str (java.util.UUID/randomUUID)) 0 8))
 
-        receiving-account (str "RECEIVING-"
-                               (subs (str (java.util.UUID/randomUUID))
-                                     0 8))
-        receiving-address (getaccountaddress :config @cfg
-                                             :account receiving-account)]
-    (prn "importing private key and rescaning, this may take a few seconds.")
-    (when (nil?
-           (importprivkey :config @cfg
-                          :bitcoinprivkey (:private addr-with-bitcoins)
-                          :label imported-account :rescan true))
-      ;; import was successful
-      (sendtoaddress :bitcoinaddress receiving-address :amount 1E-8
-                     :comment "sending 1 (testcoin) satoshi.to test btc-clj.")
-      (is (= 1E-8 (getbalance :config @cfg :account receiving-account
-                              :minconf 0))))))
+;;         receiving-account (str "RECEIVING-"
+;;                                (subs (str (java.util.UUID/randomUUID))
+;;                                      0 8))
+;;         receiving-address (getaccountaddress :config @cfg
+;;                                              :account receiving-account)]
+;;     (prn "importing private key and rescaning, this may take a few seconds.")
+;;     (when (nil?
+;;            (importprivkey :config @cfg
+;;                           :bitcoinprivkey (:private addr-with-bitcoins)
+;;                           :label imported-account :rescan true))
+;;       ;; import was successful
+;;       (sendtoaddress
+;;        :config @cfg :bitcoinaddress receiving-address :amount 1E-4
+;;        :comment "sending 1E-4 (testcoin) BTC .to test clj-btc.")
+;;       (is (= 1E-4M (getbalance :config @cfg :account receiving-account
+;;                                :minconf 0))))
+;;     (prn "done.")))

@@ -1,0 +1,74 @@
+* clj-btc
+  Clojure bindings for the original (C++) Bitcoin Client json-rpc API.
+  For the full list of calls, see: [[https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list.][API calls list]]
+
+* Installation
+
+** [[https://github.com/technomancy/leiningen][leiningen]]
+   add this to your =project.clj='s =:dependencies=:
+
+  #+BEGIN_EXAMPLE
+  [clj-btc "0.1.0"]
+  #+END_EXAMPLE
+
+** [[http://maven.apache.org/][Maven]]
+  #+BEGIN_EXAMPLE
+  <dependency>
+    <groupId>clj-btc</groupId>
+    <artifactId>clj-btc</artifactId>
+    <version>0.1.0</version>
+  </dependency>
+  #+END_EXAMPLE
+
+
+* Usage
+
+   To call the method (for example) =getinfo= on a bitcoind according
+   to the local default =bitcoin.conf= file:
+   #+BEGIN_EXAMPLE
+   (require '[clj-btc.core :as btc])
+   ;;=> nil
+   user=> (btc/getinfo)
+   ;;=> {"timeoffset" 0, "protocolversion" 70001, "blocks" 111908, "errors" "",
+         "testnet" true, "proxy" "", "connections" 4, "version" 80500,
+         "keypoololdest" 1380388750, "paytxfee" 0E-8M,
+         "difficulty" 4642.44443532M, "keypoolsize" 101, "balance" 0E-8M,
+         "walletversion" 60000}
+   #+END_EXAMPLE
+
+   By default, *any* call on an rpc-method will read the (default) local
+   configuration file. However, since this is somewhat less than
+   efficient, it is possible to specify a configuration manually. The
+   configuration must contain the keys
+   =:rpcpassword :rpcuser :testnet :rpcport= and =:rpchost=.
+   #+BEGIN_EXAMPLE
+   user=> (def config {:rpcpassword "PASSWORD", :rpcuser "USR", :testnet true,
+                       :rpcport 18332, :rpchost "http://127.0.0.1"})
+   ;;=> #'user/config
+   user=> (btc/getbalace :config config)  ; no file is read to get configs
+   ;;=> 2.718281M
+   #+END_EXAMPLE
+
+   It is also possible to use a different configuration file by
+   passing its path to =clj-btc.config/parse-config=:
+   #+BEGIN_EXAMPLE
+   user=> (require '[clj-btc.config :only (parse-config)])
+   ;;=> nil
+   user=> (def config (parse-config "/path/to/my.conf"))
+   ;;=> #'user/config
+   user=> (btc/getbalace :config config)  ; no file is read to get configs
+   ;;=> 777M
+   #+END_EXAMPLE
+
+
+* Future Work [0/4]
+
+  - [ ] Add tests for all the rpc methods.
+  - [ ] Add types with [[https://github.com/clojure/core.typed][core.typed]].
+  - [ ] Improve documentation with more examples.
+  - [ ] Add clojurescript support via =cljx=.
+
+
+* Changes
+
+  See CHANGES.org at the root of this repo.
