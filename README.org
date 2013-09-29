@@ -26,7 +26,7 @@
    To call the method (for example) =getinfo= on a bitcoind according
    to the local default =bitcoin.conf= file:
    #+BEGIN_EXAMPLE
-   (require '[clj-btc.core :as btc])
+   user=> (require '[clj-btc.core :as btc])
    ;;=> nil
    user=> (btc/getinfo)
    ;;=> {"timeoffset" 0, "protocolversion" 70001, "blocks" 111908, "errors" "",
