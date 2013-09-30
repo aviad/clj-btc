@@ -1,4 +1,4 @@
-(defproject clj-btc "0.2.0-SNAPSHOT"
+(defproject clj-btc "0.1.1"
   :description "Clojure bindings for the original (C++) Bitcoin Client"
   :url "https://github.com/aviad/clj-btc"
   :license {:name "Eclipse Public License"

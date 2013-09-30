@@ -13,7 +13,16 @@
 
 (set! *warn-on-reflection* true)
 
-;;; config file related functions
+(defn- read-prop-val
+  "*Safely* Read a string parsed from the properties file, and parse
+  it as: Integer, Boolean, String. Otherwise, throw an exception."
+  [inp]
+  (try (Long/parseLong inp)
+       (catch NumberFormatException _
+         (if (contains? #{"true" "false"} inp)
+           (Boolean/parseBoolean inp)
+           inp))))
+
 (defn- default-config-file
   "Return the full path (as a vector of strings) to the default bitcoin.conf
    file, by OS (default Linux). This is in accordance with
@@ -37,7 +46,7 @@
         (with-open [reader (jio/reader file-name)]
           (let [props (java.util.Properties.)]
             (.load props reader)
-            (into {} (for [[k v] props] [(keyword k) (read-string v)]))))
+            (into {} (for [[k v] props] [(keyword k) (read-prop-val v)]))))
         testnet (and (integer? (:testnet config))
                      (> (:testnet config) 0))]
     ;; add default values
