@@ -64,6 +64,7 @@
 * Future Work
 
   - [ ] Add tests for all the rpc methods.
+  - [ ] Add support for connections over https.
   - [ ] Add types with [[https://github.com/clojure/core.typed][core.typed]].
   - [ ] Improve documentation with more examples.
   - [ ] Add clojurescript support via =cljx=.

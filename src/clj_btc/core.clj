@@ -8,16 +8,20 @@
 ;;;; any other, from this software.
 
 (ns clj-btc.core
-  (:require [clojure.data.json :as json])
-  (:require [org.httpkit.client :as http])
-  (:require [clojure.java.io :as jio :refer (reader)])
-  (:require [clj-btc.config :refer (read-local-config)])
+  (:require [clojure.data.json :as json]
+            [clojure.core.typed :as T]
+            [org.httpkit.client :as http]
+            [clj-btc.config :refer (read-local-config)]
+            [clj-btc.data-structures :refer (ConfigMap ResultMap ErrorMap)])
   (:import java.io.StringReader))
 
 (set! *warn-on-reflection* true)
 
+(T/ann id-num java.util.concurrent.atomic.AtomicInteger)
 (def ^java.util.concurrent.atomic.AtomicInteger id-num
   (java.util.concurrent.atomic.AtomicInteger.))
+
+(T/ann not-nil? [Any -> Boolean])
 (def not-nil? (comp not nil?))
 
 (defn- rpc-call
@@ -57,7 +61,13 @@
   [name doc args & premap]
   (do-rpc name doc args (first premap)))
 
+
 ;;; Remote Procedure Calls
+(T/ann addmultisigaddress
+       [&
+        :optional {:config ConfigMap :account String}
+        :mandatory {:nrequired Integer
+                    :keys (Vector* String)} -> (U String ErrorMap)])
 (defrpc addmultisigaddress
   "Add a nrequired-to-sign multisignature address to the wallet. Each key is
    a bitcoin address or hex-encoded public key. If [account] is specified,
@@ -66,7 +76,11 @@
   {:pre [(integer? nrequired)
          (vector? keys)]})
 
-;;; ToDo: change add-remove-onetry to keyword-based
+;;; TODO: change add-remove-onetry to keyword-based
+(T/ann addnode [&
+                :optional {:config ConfigMap}
+                :mandatory {:node String :add-remove-onetry String}
+                -> (U nil ErrorMap)])
 (defrpc addnode
   "(version 0.8) Attempts add or remove <node> from the addnode list or try a
    connection to <node> once."
@@ -74,6 +88,10 @@
   {:pre [(string? node)
          (string? add-remove-onetry)]})
 
+(T/ann backupwallet [&
+                     :optional {:config ConfigMap}
+                     :mandatory {:destination String}
+                     -> (U nil ErrorMap)])
 (defrpc backupwallet
   "Safely copies wallet.dat to destination, which can be a directory or a path
    with filename."
@@ -176,6 +194,8 @@
   "Returns a recent hashes per second performance measurement while generating."
   [])
 
+(T/ann getinfo
+       [-> ResultMap])
 (defrpc getinfo
   "Returns an object containing various state info."
   [])
