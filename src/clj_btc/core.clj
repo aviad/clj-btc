@@ -41,14 +41,12 @@
 
 (defn- do-rpc
   [name doc args premap]
-  (let [args-form ['& {:keys (vec (cons 'config args))
-                       :or '{config (read-local-config)}}]
-        premap (merge-with (comp vec concat)
-                           {:pre `[(map? ~'config)]}
-                           premap)]
+  (let [args-form ['& {:keys (vec (cons 'config args))}]]
     `(defn ~name ~doc ~args-form
        ~premap
-       (let [params# (vec (take-while not-nil? ~args))]
+       (let [~'config (or ~'config (read-local-config))
+             params# (vec (take-while not-nil? ~args))]
+         (assert (map? ~'config))
          (rpc-call ~'config ~(str name) params#)))))
 
 (defmacro ^:private defrpc
