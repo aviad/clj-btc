@@ -90,7 +90,7 @@
   "(version 0.7) Creates a raw transaction spending given inputs:
    [{\"txid\": txid \"vout\": n}...] {address:amount...}."
   [txids-map addrs-amounts-map]
-  {:pre [(map? txids-map)
+  {:pre [(vector? txids-map)
          (map? addrs-amounts-map)]})
 
 (defrpc decoderawtransaction
