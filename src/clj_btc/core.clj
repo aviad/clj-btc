@@ -345,7 +345,7 @@
             :minconf 6 :comment \"Keep the change\")"
   [fromaccount address-amount-maps minconf comment]
   {:pre [(string? fromaccount)
-         (vector? address-amount-maps)]})
+         (map? address-amount-maps)]})
 
 (defrpc sendrawtransaction
   "(version 0.7) Submits raw transaction (serialized, hex-encoded) to
