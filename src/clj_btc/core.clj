@@ -341,7 +341,7 @@
   "amounts are double-precision floating point numbers.
   example usage:
   (sendmany :fromaccount \"my-account\"
-            :address-amount-maps [{\"payee1\" \"amount1\"}]
+            :address-amount-maps {\"payee1\" \"amount1\" ...}
             :minconf 6 :comment \"Keep the change\")"
   [fromaccount address-amount-maps minconf comment]
   {:pre [(string? fromaccount)
