@@ -88,7 +88,7 @@
   "(version 0.7) Creates a raw transaction spending given inputs:
    [{\"txid\": txid \"vout\": n}...] {address:amount...}."
   [txids-map addrs-amounts-map]
-  {:pre [(map? txids-map)
+  {:pre [(vector? txids-map)
          (map? addrs-amounts-map)]})
 
 (defrpc decoderawtransaction
@@ -339,11 +339,11 @@
   "amounts are double-precision floating point numbers.
   example usage:
   (sendmany :fromaccount \"my-account\"
-            :address-amount-maps [{\"payee1\" \"amount1\"}]
+            :address-amount-maps {\"payee1\" \"amount1\" ...}
             :minconf 6 :comment \"Keep the change\")"
   [fromaccount address-amount-maps minconf comment]
   {:pre [(string? fromaccount)
-         (vector? address-amount-maps)]})
+         (map? address-amount-maps)]})
 
 (defrpc sendrawtransaction
   "(version 0.7) Submits raw transaction (serialized, hex-encoded) to
