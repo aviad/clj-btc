@@ -1,6 +1,8 @@
 * clj-btc
-  Clojure bindings for the original (C++) Bitcoin Client json-rpc API,
-  *version 0.8.5*.
+  Clojure bindings for the original (C++) Bitcoin Client json-rpc API.
+  
+  This release was tested with [[https://bitcoin.org/en/release/v0.8.5][*version 0.8.5*]].
+
   For the full list of calls, see: [[https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_Calls_list][API calls list]].
 
 * Installation
