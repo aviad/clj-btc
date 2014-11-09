@@ -19,9 +19,9 @@
 ;;; local configuration file.
 
 (def cfg (atom {}))
-;; (def addr-with-bitcoins
-;;   {:public "mqWiQRdS6MePCtALRg2smULFvqf8Ru1usj",
-;;    :private "cVGghpMADPnrX6YNnS7X8nSEnULR6epfJFHLyw9dvKi6n17tUkDg"})
+(def addr-with-bitcoins
+  {:public "mqWiQRdS6MePCtALRg2smULFvqf8Ru1usj",
+   :private "cVGghpMADPnrX6YNnS7X8nSEnULR6epfJFHLyw9dvKi6n17tUkDg"})
 
 (defn config-fixture
   [f]
@@ -90,6 +90,55 @@
     (is (false? ((validateaddress :config @cfg
                                   :bitcoinaddress "invalid-address")
          "isvalid")))))
+
+(deftest raw-transactions
+  (let [empty-raw-tx "01000000000000000000"]
+    (is (= empty-raw-tx (createrawtransaction :txids-map []
+                                              :addrs-amounts-map {}))
+        "empty raw transaction creation correct")
+
+    (is (= (createrawtransaction
+            :txids-map
+            [{"txid" "7acb74b4ad7f982eed3dabf93c8f474451b0a60f3f7950cd12a2bbe721290cb8"
+              "vout" 0}]
+            :addrs-amounts-map {"mqWiQRdS6MePCtALRg2smULFvqf8Ru1usj" 9.87654321})
+           "0100000001b80c2921e7bba212cd50793f0fa6b05144478f3cf9ab3ded2e987fadb474cb7a0000000000ffffffff01b168de3a000000001976a9146da5a9b587c385c1a6002bf77f71e4333e0ceb1a88ac00000000")
+        "raw transaction creation correct")
+    
+    (let [random-vout (rand-int 10000)
+          random-amount (bigdec (rand))
+          raw-transaction (createrawtransaction
+                           :txids-map
+                           [{"txid" "7acb74b4ad7f982eed3dabf93c8f474451b0a60f3f7950cd12a2bbe721290cb8"
+                             "vout" random-vout}]
+                           :addrs-amounts-map
+                           {"mqWiQRdS6MePCtALRg2smULFvqf8Ru1usj" random-amount})
+          decoded-raw-transaction (decoderawtransaction :hex-string raw-transaction)]
+      (is (= decoded-raw-transaction
+             {"txid" "6316b2abcc2d957ecb1304f63725ea70841b1feae94c6f017e114556d8c60537",
+              "version" 1, "locktime" 0,
+              "vin" [{"txid" "7acb74b4ad7f982eed3dabf93c8f474451b0a60f3f7950cd12a2bbe721290cb8",
+                      "vout" random-vout, "scriptSig" {"asm" "", "hex" ""},
+                      "sequence" 4294967295}],
+              "vout" [{"value" random-amount, "n" 0,
+                       "scriptPubKey"
+                       {"asm" "OP_DUP OP_HASH160 6da5a9b587c385c1a6002bf77f71e4333e0ceb1a OP_EQUALVERIFY OP_CHECKSIG",
+                        "hex" "76a9146da5a9b587c385c1a6002bf77f71e4333e0ceb1a88ac",
+                        "reqSigs" 1, "type" "pubkeyhash", "addresses" ["mqWiQRdS6MePCtALRg2smULFvqf8Ru1usj"]}}]})
+          "decoding encoded raw transaction correct"))
+    (is (= (getrawtransaction :txid "7acb74b4ad7f982eed3dabf93c8f474451b0a60f3f7950cd12a2bbe721290cb8")
+           "01000000019c19404b3cd4aa272cdc45fd6362f33151181d6ea6f26bda8d6311664e8a2248000000006b483045022065939207fde542fd6f38da9c651537f3e36621e9a447f2877ff0e8a807137367022100c7935881cd3af35502eb12a7ea12d7a2952ac5e1ada1dd52bef1b9449fca36240121024d1a5f75a170eebebe25df71a87e3ef012cc07754db4c87feeee65f1aeed84bfffffffff0210270000000000001976a914fac7cf4845a26094ff9571a27db6268950a3b70e88ac3214ac3a000000001976a914560b13a3ac034489c8bc9488d749174a2fb198e988ac00000000")
+        "get raw transaction")
+    
+    (is (= (signrawtransaction
+            :txid "010000000189957b01aed596d3b361b576234eaeed3249246f14562d6bc6085166cd247d5a0000000000ffffffff0180969800000000001976a9140dfc8bafc8419853b34d5e072ad37d1a5159f58488ac00000000"
+            :txinfo [{:txid "7acb74b4ad7f982eed3dabf93c8f474451b0a60f3f7950cd12a2bbe721290cb8" :vout 2 :scriptPubKey "123d"}])
+           {"hex" "010000000189957b01aed596d3b361b576234eaeed3249246f14562d6bc6085166cd247d5a0000000000ffffffff0180969800000000001976a9140dfc8bafc8419853b34d5e072ad37d1a5159f58488ac00000000",
+            "complete" false})
+        "raw transaction not signed")))
+
+
+
 
 ;; (deftest send-payment
 ;;   (let [imported-account

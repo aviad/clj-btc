@@ -64,6 +64,8 @@
 * Future Work
 
   - [ ] Add tests for all the rpc methods.
+  - [ ] Replace transactions in tests with some of the first ones on
+    testnet - for test performance and stability.
   - [ ] Add types with [[https://github.com/clojure/core.typed][core.typed]].
   - [ ] Improve documentation with more examples.
   - [ ] Add clojurescript support via =cljx=.
