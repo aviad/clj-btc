@@ -79,6 +79,11 @@
   See CHANGES.org at the root of this repo.
 
 
+* Contact
+
+  You can contact the maintainer of this library, and other
+  developpers/users at [[https://github.com/aviad/clj-btc][github]], or [[clj-btc@googlegroups.com]].
+
 * License
 
   Copyright 2013 Aviad Reich.
