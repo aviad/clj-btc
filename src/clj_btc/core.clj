@@ -373,6 +373,12 @@
   [generate genproclimit]
   {:pre [(instance? Boolean generate)]})
 
+(defrpc estimatefee
+  "<blocks> is an int specifying how many blocks you're willing
+  to wait before confirmation"
+  [blocks]
+  {:pre [(number? blocks)]})
+
 (defrpc settxfee
   "<amount> is a real and is rounded to the nearest 0.00000001"
   [amount]
