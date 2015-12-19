@@ -106,6 +106,12 @@
   [passphrase]
   {:pre [(string? passphrase)]})
 
+(defrpc estimatefee
+  "<blocks> is an int specifying how many blocks you're willing
+  to wait before confirmation"
+  [blocks]
+  {:pre [(integer? blocks)]})
+
 (defrpc getaccount
   "Returns the account associated with the given address."
   [bitcoinaddress]
@@ -372,12 +378,6 @@
   unlimited."
   [generate genproclimit]
   {:pre [(instance? Boolean generate)]})
-
-(defrpc estimatefee
-  "<blocks> is an int specifying how many blocks you're willing
-  to wait before confirmation"
-  [blocks]
-  {:pre [(integer? blocks)]})
 
 (defrpc settxfee
   "<amount> is a real and is rounded to the nearest 0.00000001"
