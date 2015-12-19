@@ -1,9 +1,9 @@
 * clj-btc
   Clojure bindings for the original (C++) Bitcoin Client json-rpc API.
   
-  This release was tested with [[https://bitcoin.org/en/release/v0.8.5][*version 0.8.5*]].
+  This release was tested with [[https://bitcoin.org/en/release/v0.11.2][*version 0.11.2*]].
 
-  For the full list of calls, see: [[https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_Calls_list][API calls list]].
+  For the full list of calls, see: [[https://bitcoin.org/en/developer-reference#bitcoin-core-apis][Bitcoin Core APIs]].
 
 * Installation
 
@@ -11,7 +11,7 @@
    add this to your =project.clj='s =:dependencies=:
 
   #+BEGIN_EXAMPLE
-  [clj-btc "0.1.2"]
+  [clj-btc "0.11.2"]
   #+END_EXAMPLE
 
 ** [[http://maven.apache.org/][Maven]]
@@ -19,7 +19,7 @@
   <dependency>
     <groupId>clj-btc</groupId>
     <artifactId>clj-btc</artifactId>
-    <version>0.1.2</version>
+    <version>0.11.2</version>
   </dependency>
   #+END_EXAMPLE
 
@@ -71,7 +71,6 @@
     testnet - for test performance and stability.
   - [ ] Add types with [[https://github.com/clojure/core.typed][core.typed]].
   - [ ] Improve documentation with more examples.
-  - [ ] Add clojurescript support via =cljx=.
 
 
 * Changes
@@ -86,7 +85,7 @@
 
 * License
 
-  Copyright 2013 Aviad Reich.
+  Copyright 2013-2016 Aviad Reich.
 
   The use and distribution terms for this software are covered by the
   Apache License, Version 2.0
