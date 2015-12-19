@@ -1,4 +1,4 @@
-;;;; Copyright 2013 Aviad Reich.
+;;;; Copyright 2013-2016 Aviad Reich.
 ;;;; The use and distribution terms for this software are covered by
 ;;;; the Apache License, Version 2.0
 ;;;; (http://www.apache.org/licenses/LICENSE-2.0.txt), which can be
@@ -176,10 +176,6 @@
   "Returns true or false whether bitcoind is currently generating hashes"
   [])
 
-(defrpc gethashespersec
-  "Returns a recent hashes per second performance measurement while generating."
-  [])
-
 (defrpc getinfo
   "Returns an object containing various state info."
   [])
@@ -250,15 +246,6 @@
 (defrpc gettxoutsetinfo
   "Returns statistics about the unspent transaction output (UTXO) set"
   [])
-
-(defrpc getwork
-  "If [data] is not specified, returns formatted hash data to work on:
-  \"midstate\": precomputed hash state after hashing the first half of
-  the data, \"data\": block data, \"hash1\": formatted hash buffer for
-  second hash, \"target\": little endian hash target, If [data] is
-  specified, tries to solve the block and returns true if it was
-  successful."
-  [data])
 
 (defrpc help
   "List commands, or get help for a command."

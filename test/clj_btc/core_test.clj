@@ -1,4 +1,4 @@
-;;;; Copyright 2013 Aviad Reich.
+;;;; Copyright 2013-2016 Aviad Reich.
 ;;;; The use and distribution terms for this software are covered by
 ;;;; the Apache License, Version 2.0
 ;;;; (http://www.apache.org/licenses/LICENSE-2.0.txt), which can be
@@ -58,7 +58,6 @@
   (is-type integer? getblockcount)
   (is-type integer? getconnectioncount)
   (is-type BigDecimal getdifficulty)
-  (is-type integer? gethashespersec)
   (is-type integer? getblockcount)
   (is-type vector? listreceivedbyaddress)
   (is-type vector? listreceivedbyaccount)
