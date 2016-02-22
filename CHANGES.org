@@ -1,0 +1,9 @@
+* Changes in version 0.11.2
++ outdated =getwork= and =gethashespersec= calls were removed, after
+  their removal from bitcoin versions 0.10 and 0.11.
++ =estimatefee= rpc call was added. 
+
+* Contributors:
++ [[https://github.com/micmarsh][Michael Marsh (micmarsh)]]
++ [[https://github.com/sgrove][Sean Grove (sgrove)]]
++ [[https://github.com/pdpi][Pedro Pinheiro (pdpi)]]

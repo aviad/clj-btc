@@ -1,4 +1,4 @@
-;;;; Copyright 2013 Aviad Reich.
+;;;; Copyright 2013-2016 Aviad Reich.
 ;;;; The use and distribution terms for this software are covered by
 ;;;; the Apache License, Version 2.0
 ;;;; (http://www.apache.org/licenses/LICENSE-2.0.txt), which can be
@@ -54,10 +54,10 @@
   (superset? (set m1) (set m2)))
 
 (deftest return-types
+  (is-type BigDecimal estimatefee :blocks 6)
   (is-type integer? getblockcount)
   (is-type integer? getconnectioncount)
   (is-type BigDecimal getdifficulty)
-  (is-type integer? gethashespersec)
   (is-type integer? getblockcount)
   (is-type vector? listreceivedbyaddress)
   (is-type vector? listreceivedbyaccount)
@@ -111,7 +111,7 @@
             :addrs-amounts-map {"mqWiQRdS6MePCtALRg2smULFvqf8Ru1usj" 9.87654321})
            "0100000001b80c2921e7bba212cd50793f0fa6b05144478f3cf9ab3ded2e987fadb474cb7a0000000000ffffffff01b168de3a000000001976a9146da5a9b587c385c1a6002bf77f71e4333e0ceb1a88ac00000000")
         "raw transaction creation correct")
-    
+
     (let [random-vout (rand-int 10000)
           random-amount (bigdec (format "%.8f" (rand)))
           raw-transaction (createrawtransaction
@@ -137,12 +137,14 @@
     (is (= (getrawtransaction :txid "7acb74b4ad7f982eed3dabf93c8f474451b0a60f3f7950cd12a2bbe721290cb8")
            "01000000019c19404b3cd4aa272cdc45fd6362f33151181d6ea6f26bda8d6311664e8a2248000000006b483045022065939207fde542fd6f38da9c651537f3e36621e9a447f2877ff0e8a807137367022100c7935881cd3af35502eb12a7ea12d7a2952ac5e1ada1dd52bef1b9449fca36240121024d1a5f75a170eebebe25df71a87e3ef012cc07754db4c87feeee65f1aeed84bfffffffff0210270000000000001976a914fac7cf4845a26094ff9571a27db6268950a3b70e88ac3214ac3a000000001976a914560b13a3ac034489c8bc9488d749174a2fb198e988ac00000000")
         "get raw transaction")
-    
-    (is (= (signrawtransaction
-            :hexstring "010000000189957b01aed596d3b361b576234eaeed3249246f14562d6bc6085166cd247d5a0000000000ffffffff0180969800000000001976a9140dfc8bafc8419853b34d5e072ad37d1a5159f58488ac00000000"
-            :txinfo [{:txid "7acb74b4ad7f982eed3dabf93c8f474451b0a60f3f7950cd12a2bbe721290cb8" :vout 2 :scriptPubKey "123d"}])
-           {"hex" "010000000189957b01aed596d3b361b576234eaeed3249246f14562d6bc6085166cd247d5a0000000000ffffffff0180969800000000001976a9140dfc8bafc8419853b34d5e072ad37d1a5159f58488ac00000000",
-            "complete" false})
+
+    (is (supermap? (signrawtransaction
+                    :hexstring "010000000189957b01aed596d3b361b576234eaeed3249246f14562d6bc6085166cd247d5a0000000000ffffffff0180969800000000001976a9140dfc8bafc8419853b34d5e072ad37d1a5159f58488ac00000000"
+                    :txinfo [{:txid "7acb74b4ad7f982eed3dabf93c8f474451b0a60f3f7950cd12a2bbe721290cb8"
+                              :vout 2
+                              :scriptPubKey "123d"}])
+                   {"hex" "010000000189957b01aed596d3b361b576234eaeed3249246f14562d6bc6085166cd247d5a0000000000ffffffff0180969800000000001976a9140dfc8bafc8419853b34d5e072ad37d1a5159f58488ac00000000",
+                    "complete" false})
         "raw transaction not signed")))
 
 

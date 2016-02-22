@@ -1,4 +1,4 @@
-;;;; Copyright 2013 Aviad Reich.
+;;;; Copyright 2013-2016 Aviad Reich.
 ;;;; The use and distribution terms for this software are covered by
 ;;;; the Apache License, Version 2.0
 ;;;; (http://www.apache.org/licenses/LICENSE-2.0.txt), which can be
@@ -106,6 +106,12 @@
   [passphrase]
   {:pre [(string? passphrase)]})
 
+(defrpc estimatefee
+  "<blocks> is an int specifying how many blocks you're willing
+  to wait before confirmation"
+  [blocks]
+  {:pre [(integer? blocks)]})
+
 (defrpc getaccount
   "Returns the account associated with the given address."
   [bitcoinaddress]
@@ -168,10 +174,6 @@
 
 (defrpc getgenerate
   "Returns true or false whether bitcoind is currently generating hashes"
-  [])
-
-(defrpc gethashespersec
-  "Returns a recent hashes per second performance measurement while generating."
   [])
 
 (defrpc getinfo
@@ -244,15 +246,6 @@
 (defrpc gettxoutsetinfo
   "Returns statistics about the unspent transaction output (UTXO) set"
   [])
-
-(defrpc getwork
-  "If [data] is not specified, returns formatted hash data to work on:
-  \"midstate\": precomputed hash state after hashing the first half of
-  the data, \"data\": block data, \"hash1\": formatted hash buffer for
-  second hash, \"target\": little endian hash target, If [data] is
-  specified, tries to solve the block and returns true if it was
-  successful."
-  [data])
 
 (defrpc help
   "List commands, or get help for a command."
@@ -372,12 +365,6 @@
   unlimited."
   [generate genproclimit]
   {:pre [(instance? Boolean generate)]})
-
-(defrpc estimatefee
-  "<blocks> is an int specifying how many blocks you're willing
-  to wait before confirmation"
-  [blocks]
-  {:pre [(integer? blocks)]})
 
 (defrpc settxfee
   "<amount> is a real and is rounded to the nearest 0.00000001"
