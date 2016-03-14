@@ -8,10 +8,13 @@
 ;;;; any other, from this software.
 
 (ns clj-btc.core-test
+  (:use org.httpkit.fake)
   (:require [clojure.set :refer (superset?)]
             [clojure.test :refer :all]
             [clj-btc.core :refer :all]
-            [clj-btc.config :refer :all]))
+            [clj-btc.config :refer :all]
+            [org.httpkit.client :as http]
+            [clj-btc.json_rpc :as rpc]))
 
 ;;; Since clj-btc is a wrapper around the C++ Bitcoin client, all the
 ;;; tests are integration tests - making sure the different functions
@@ -28,7 +31,7 @@
 (defn config-fixture
   [f]
   (let [conf (read-local-config)
-        info (getinfo :confing @cfg)]
+        info (getinfo :config conf)]
     ;;; only test on testnet
     (when (info "testnet")
       (reset! cfg conf))
@@ -52,6 +55,30 @@
   "Does m1 cointain all of m2? (inspired by https://stackoverflow.com/questions/20421405/how-to-check-if-a-map-is-a-subset-of-another-in-clojure)"
   [m1 m2]
   (superset? (set m1) (set m2)))
+
+(deftest retry
+  (let [config_simple {
+            :rpchost ["http://bitcoind"]
+            :rpcport ["1235"]}
+        req_simple {:url "http://bitcoind:1235" :method :post}
+        resp_simple "{\"result\": \"hello world\"}"
+        config_err {
+            :rpchost ["http://bitcoind-1"]
+            :rpcport ["1234"]}
+        req_err {:url "http://bitcoind-1:1234" :method :post}
+        resp_err {:error (Exception. "error")}
+        config_ok {
+          :rpchost ["http://bitcoind-1","http://bitcoind-2"]
+          :rpcport ["1234","1235"]}
+        req_ok {:url "http://bitcoind-2:1235" :method :post}
+        resp_ok "{\"result\": \"hello world\"}"]
+  (with-fake-http [req_simple resp_simple
+                   req_err resp_err
+                   req_ok resp_ok]
+      (is (= (rpc/rpc-call config_simple "method" []) "hello world"))
+      (is (thrown? Exception (rpc/rpc-call config_err "method" [])))
+      (is (= (rpc/rpc-call config_ok "method" []) "hello world")))))
+
 
 (deftest return-types
   (is-type BigDecimal estimatefee :blocks 6)
