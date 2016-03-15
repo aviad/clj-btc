@@ -42,7 +42,9 @@
    Might throw an exception in case of a non-bitcoin error
    (i.e a connection is refused)."
   [config method params]
-  (let [resp
+  (let [logger (:logger config)
+        host (:rpchost config)
+        resp
         @(http/post
           (str (config :rpchost) ":" (config :rpcport))
           {:basic-auth [(config :rpcuser) (config :rpcpassword)],
@@ -51,7 +53,15 @@
                                   "method" method,
                                   "id" (.incrementAndGet id-num)})})]
     (if-let [err (:error resp)]
-      resp
-      (if (= 200 (:status resp))
-        (-> resp :body StringReader. (json/read :bigdec true) (get "result"))
-        (-> resp :body json/read-str (get "error"))))))
+      (do
+        (if (fn? logger)
+          (logger (str "RPC call to " method " on " host " failed: " err)))
+        resp)
+      (let [payload (-> resp :body StringReader. (json/read :bigdec true))]
+        (if (= 200 (:status resp))
+          (get payload "result")
+          (do
+            (if (fn? logger)
+              (logger (str "RPC call to " method " on " host " failed: "
+                           (get payload "error"))))
+              (get payload "error")))))))
