@@ -43,6 +43,7 @@
    (i.e a connection is refused)."
   [config method params]
   (let [logger (:logger config)
+        log (fn [msg] (when (fn? logger) (logger msg)))
         host (:rpchost config)
         resp
         @(http/post
@@ -51,17 +52,14 @@
            :headers {"Content-Type" "application/json; charset=utf-8"},
            :body (json/write-str {"version" "1.1", "params" params,
                                   "method" method,
-                                  "id" (.incrementAndGet id-num)})})]
-    (if-let [err (:error resp)]
-      (do
-        (if (fn? logger)
-          (logger (str "RPC call to " method " on " host " failed: " err)))
-        resp)
-      (let [payload (-> resp :body StringReader. (json/read :bigdec true))]
-        (if (= 200 (:status resp))
-          (get payload "result")
-          (do
-            (if (fn? logger)
-              (logger (str "RPC call to " method " on " host " failed: "
-                           (get payload "error"))))
-              (get payload "error")))))))
+                                  "id" (.incrementAndGet id-num)})})
+        err (:error resp)
+        payload (and (not err)
+                     (-> resp :body StringReader. (json/read :bigdec true)))]
+    (cond
+      err (do (log (str "RPC call to " method " on " host " failed: " err))
+              resp)
+      (= 200 (:status resp)) (get payload "result")
+      :else (do (logger (str "RPC call to " method " on " host " failed: "
+                             (get payload "error")))
+                (get payload "error")))))
