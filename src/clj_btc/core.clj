@@ -9,7 +9,7 @@
 
 (ns clj-btc.core
   (:require [clojure.data.json :as json])
-  (:require [org.httpkit.client :as http])
+  (:require [clj-btc.json-rpc :as rpc])
   (:require [clojure.java.io :as jio :refer (reader)])
   (:require [clj-btc.config :refer (read-local-config)])
   (:import java.io.StringReader))
@@ -18,26 +18,8 @@
 
 (def ^java.util.concurrent.atomic.AtomicInteger id-num
   (java.util.concurrent.atomic.AtomicInteger.))
-(def not-nil? (comp not nil?))
 
-(defn- rpc-call
-  "Perform rpc call of method with params, according to config.
-   Might throw an exception in case of a non-bitcoin error
-   (i.e a connection is refused)."
-  [config method params]
-  (let [resp
-        @(http/post
-          (str (config :rpchost) ":" (config :rpcport))
-          {:basic-auth [(config :rpcuser) (config :rpcpassword)],
-           :headers {"Content-Type" "application/json; charset=utf-8"},
-           :body (json/write-str {"version" "1.1", "params" params,
-                                  "method" method,
-                                  "id" (.incrementAndGet id-num)})})]
-    (if-let [err (:error resp)]
-      (throw err)
-      (if (= 200 (:status resp))
-        (-> resp :body StringReader. (json/read :bigdec true) (get "result"))
-        (-> resp :body json/read-str (get "error"))))))
+(def not-nil? (comp not nil?))
 
 (defn- do-rpc
   [name doc args premap]
@@ -47,7 +29,7 @@
        (let [~'config (or ~'config (read-local-config))
              params# (vec (take-while not-nil? ~args))]
          (assert (map? ~'config))
-         (rpc-call ~'config ~(str name) params#)))))
+         (rpc/rpc-call ~'config ~(str name) params#)))))
 
 (defmacro ^:private defrpc
   "Create a method for rpc. Optional parameters end with a '?'.
