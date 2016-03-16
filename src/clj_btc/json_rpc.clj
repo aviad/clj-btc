@@ -1,4 +1,4 @@
-(ns clj-btc.json_rpc
+(ns clj-btc.json-rpc
   (:require [clojure.data.json :as json])
   (:require [org.httpkit.client :as http])
   (:require [clojure.java.io :as jio :refer (reader)])

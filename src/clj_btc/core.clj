@@ -9,7 +9,7 @@
 
 (ns clj-btc.core
   (:require [clojure.data.json :as json])
-  (:require [clj-btc.json_rpc :as rpc])
+  (:require [clj-btc.json-rpc :as rpc])
   (:require [clojure.java.io :as jio :refer (reader)])
   (:require [clj-btc.config :refer (read-local-config)])
   (:import java.io.StringReader))
@@ -18,6 +18,7 @@
 
 (def ^java.util.concurrent.atomic.AtomicInteger id-num
   (java.util.concurrent.atomic.AtomicInteger.))
+
 (def not-nil? (comp not nil?))
 
 (defn- do-rpc

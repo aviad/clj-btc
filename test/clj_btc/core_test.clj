@@ -14,7 +14,7 @@
             [clj-btc.core :refer :all]
             [clj-btc.config :refer :all]
             [org.httpkit.client :as http]
-            [clj-btc.json_rpc :as rpc]))
+            [clj-btc.json-rpc :as rpc]))
 
 ;;; Since clj-btc is a wrapper around the C++ Bitcoin client, all the
 ;;; tests are integration tests - making sure the different functions
