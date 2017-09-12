@@ -3,7 +3,10 @@
   
   This release was tested with [[https://bitcoin.org/en/release/v0.11.2][*version 0.11.2*]].
 
-  For the full list of calls, see: [[https://bitcoin.org/en/developer-reference#bitcoin-core-apis][Bitcoin Core APIs]].
+  For the full list of calls, see: [[https://bitcoin.org/en/developer-reference#bitcoin-core-apis][Bitcoin Core API
+
+Clojure bindings for the original (C++) Bitcoin Client json-rpc API. 
+The purpose of this fork is to be used by Dyne.org for integration of blockchains to our social wallet
 
 * Installation
 
@@ -64,6 +67,8 @@
    #+END_EXAMPLE
 
 
+To be used as a lib
+
 * Future Work
 
   - [ ] Add tests for all the rpc methods.
@@ -83,6 +88,7 @@
   You can contact the maintainer of this library, and other
   developpers/users at [[https://github.com/aviad/clj-btc][github]], or [[clj-btc@googlegroups.com]].
 
+
 * License
 
   Copyright 2013-2016 Aviad Reich.
@@ -94,3 +100,6 @@
   software in any fashion, you are agreeing to be bound by the terms of
   this license. You must not remove this notice, or any other, from
   this software.
+
+Copyleft 2017 Dyne.org
+All credits for the original code go to Aviad Reich

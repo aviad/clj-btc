@@ -3,6 +3,7 @@
   (:require [org.httpkit.client :as http])
   (:require [clojure.java.io :as jio :refer (reader)])
   (:require [clj-btc.config :refer (read-local-config)])
+  (:require [taoensso.timbre :as log])
   (:import java.io.StringReader))
 
 (declare rpc-backend-call retry)
@@ -44,7 +45,7 @@
   [config method params]
   (let [logger (:logger config)
         log (fn [msg] (when (fn? logger) (logger msg)))
-        host (:rpchost config)
+        host (:rpchost (log/spy config))
         resp
         @(http/post
           (str (config :rpchost) ":" (config :rpcport))
